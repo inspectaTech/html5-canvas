@@ -1,6 +1,18 @@
 
-.canvas{
+
+#canvas{
+  background:#ccc;
+  height:100%;
+  border:1px solid red;
+}
+.canvas_cont{
+  display:flex;
+  justify-content:center;
+  padding:10px;
+  margin:0 auto;
   width:50vw;
   height:30vw;
-  background:#ccc;
+  border:2px solid blue;
 }
+label {height:30px;}
+.checker{height:30px;width:30px;}

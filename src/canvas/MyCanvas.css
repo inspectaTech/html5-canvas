@@ -1,6 +1,47 @@
 
-.canvas{
+  #canvas{
+    height:100%;
+    border:1px solid red;
+    /*margin: 10px 20px 0px 20px;*/
+  border: thin solid #aaaaaa;
+  cursor: crosshair;
+  }
+  .canvas_cont{
+    display:flex;
+    justify-content:center;
+    padding:10px;
+    width:50vw;
+    height:30vw;
+    border:2px solid blue;
+    margin:0 auto;
+  }
+  body {
+  background: rgba(100, 145, 250, 0.3);
+  }
+  #scaleSlider {
+  vertical-align: 10px;
+  width: 100px;
+  margin-left: 90px;
+  }
+
+  #controls {
+  display: flex;
+  justify-content: space-around;
+  margin-left: 15px;
+  padding: 0;
   width:50vw;
-  height:30vw;
-  background:#ccc;
-}
+  margin:0 auto;
+  }
+  #scaleOutput {
+  display: flex;
+  align-items: center;
+  /* position: absolute; */
+  width: 60px;
+  height: 30px;
+  margin-left: 10px;
+  vertical-align: center;
+  text-align: center;
+  color: blue;
+  font: 18px Arial;
+  text-shadow: 2px 2px 4px rgba(100, 140, 250, 0.8);
+  }

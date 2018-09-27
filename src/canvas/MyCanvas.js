@@ -37,18 +37,29 @@ class myCanvas extends React.Component {
 
     componentDidUpdate = () => {
       //this section is for executing just after first state update - all init vars are set by now
-        let boss = this.state;
-        boss.image.src = 'https://i.ytimg.com/vi/hjVN4KQY_Ko/maxresdefault.jpg';
-        boss.image.onload = function(e) {
-          boss.context.drawImage(boss.image, 0, 0);
-        }// onload
+      let s = this.state;
+      let ctx = s.context;
+
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 30;
+      ctx.font = '24px Helvetica';
+      ctx.fillText('Click anywhere to erase',175,40);
+      ctx.strokeRect(75,100,200,200);
+      ctx.fillRect(325,100,200,200);
+
+      ctx.canvas.onmousedown =  (e) => {
+        ctx.clearRect(0, 0, s.canvas.width, s.canvas.height);
+      };// mousedown
+
     }; // componentDidUpdate
 
   render(){
       return (
         <div>
-        <h1>New canvas element</h1>
-        <canvas id="canvas" className="canvas"></canvas>
+          <h1>New canvas element</h1>
+          <div className="canvas_cont">
+            <canvas id="canvas" className="canvas" height="600" width="600" ></canvas>
+          </div>
         </div>
       );
     }//render

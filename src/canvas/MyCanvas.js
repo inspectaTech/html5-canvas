@@ -24,7 +24,7 @@ class myCanvas extends React.Component {
 
     componentDidMount = () => {
       //this section is for setting up initial values just after page is rendered
-      console.log("myCanvas mounted");
+      console.log("the componentDidMount");
       let canvas = document.getElementById('canvas'),
       context = canvas.getContext('2d'),
       FONT_HEIGHT = 15,
@@ -49,18 +49,34 @@ class myCanvas extends React.Component {
 
     componentDidUpdate = () => {
       //this section is for executing just after first state update - all init vars are set by now
-        let boss = this.state;
-        boss.image.src = 'https://i.ytimg.com/vi/hjVN4KQY_Ko/maxresdefault.jpg';
-        boss.image.onload = function(e) {
-          boss.context.drawImage(boss.image, 0, 0);
-        }// onload
+      console.log("the componentDidUpdate")
+        // let boss = this.state;
+        this.drawClock();
+
     }; // componentDidUpdate
+
+    drawClock = () => {
+      let boss = this.state;
+      boss.context.clearRect(0,0,boss.canvas.width,boss.canvas.height);
+
+      this.drawCircle();
+    }
+
+    drawCircle = () => {
+      let boss = this.state;
+      boss.context.beginPath();
+      boss.context.arc(boss.canvas.width/2, boss.canvas.height/2, boss.RADIUS, 0,2*Math.PI, true);
+      boss.context.stroke();
+      boss.context.fillStyle = "yellow";
+      boss.context.fill();
+    }
 
   render(){
       return (
         <div>
         <h1>New canvas element</h1>
-        <canvas id="canvas" className="canvas"></canvas>
+        <canvas id="canvas" className="canvas" width="600" height="600"></canvas>
+        {/*css width and height didn't help the poor canvas distorted display - needed hardcode*/ }
         </div>
       );
     }//render

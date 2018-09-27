@@ -26,11 +26,23 @@ class myCanvas extends React.Component {
       //this section is for setting up initial values just after page is rendered
       console.log("myCanvas mounted");
       let canvas = document.getElementById('canvas'),
-      context = canvas.getContext('2d');
+      context = canvas.getContext('2d'),
+      FONT_HEIGHT = 15,
+      MARGIN = 13,
+      HAND_TRUNCATION = canvas.width/25,
+      NUMBERAL_SPACING = canvas.width/10,
+      RADIUS = canvas.width/2 - MARGIN,
+      HAND_RADIUS = RADIUS + NUMBERAL_SPACING;
 
       this.setState({
         canvas,
-        context
+        context,
+        FONT_HEIGHT,
+        MARGIN,
+        HAND_TRUNCATION,
+        NUMBERAL_SPACING,
+        RADIUS,
+        HAND_RADIUS
       });//setState
 
     };// componentDidMount

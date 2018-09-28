@@ -43,9 +43,13 @@ class myCanvas extends React.Component {
       ctx.lineJoin = 'round';
       ctx.lineWidth = 30;
       ctx.font = '24px Helvetica';
-      ctx.fillText('Click anywhere to erase',175,40);
-      ctx.strokeRect(75,100,200,200);
-      ctx.fillRect(325,100,200,200);
+      ctx.fillText('Click anywhere to erase',175,200);// formerly ,40)
+
+      ctx.strokeStyle = 'antiquewhite';// #1 color - goldenrod
+      ctx.strokeRect(75,100,200,200);// this must be rectangle #1
+
+      ctx.fillStyle = 'rgba(0,0,255,0.5)';// #2 fill - the 0.5 section represents transparency
+      ctx.fillRect(325,100,200,200);// #2
 
       ctx.canvas.onmousedown =  (e) => {
         ctx.clearRect(0, 0, s.canvas.width, s.canvas.height);

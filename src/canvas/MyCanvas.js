@@ -33,6 +33,8 @@ class myCanvas extends React.Component {
         context
       });//setState
 
+      // the state isn't set until after this componentDidMount finishes.
+      // so applying anything to the state within this function will likely fail
     };// componentDidMount
 
     componentDidUpdate = () => {
@@ -54,8 +56,37 @@ class myCanvas extends React.Component {
       ctx.canvas.onmousedown =  (e) => {
         ctx.clearRect(0, 0, s.canvas.width, s.canvas.height);
       };// mousedown
-
+      this.create_gradient();
     }; // componentDidUpdate
+
+    create_gradient = () => {
+      console.log('gradient running!');
+      let s = this.state,
+      ctx = s.context,
+      gradient1 = ctx.createLinearGradient(0, 0, s.canvas.width, 0),
+      gradient2 = ctx.createLinearGradient(0, 0, s.canvas.width, s.canvas.height);
+
+      this.add_stops(gradient1);
+
+      this.add_stops(gradient2);
+
+      ctx.fillStyle = gradient1;
+      // ctx.rect(0, 0, s.canvas.width, s.canvas.height);
+      ctx.fillRect(75,350,200,200);
+
+      ctx.fillStyle = gradient2;
+      // ctx.rect(0, 0, s.canvas.width, s.canvas.height);
+      ctx.fillRect(325,350,200,200);
+    }// create_gradient
+
+    add_stops = (gTar) => {
+      let g_target = gTar;
+      g_target.addColorStop(0, 'blue');
+      g_target.addColorStop(0.25, 'white');
+      g_target.addColorStop(0.5, 'purple');
+      g_target.addColorStop(0.75, 'red');
+      g_target.addColorStop(1, 'yellow');
+    }//add_stops
 
   render(){
       return (

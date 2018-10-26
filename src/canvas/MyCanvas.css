@@ -1,6 +1,28 @@
 
+.canvas_display{
+  border:1px solid red;
+  width:50vw;
+  /* height:30vw; */
+  margin:0 auto;
+  display:grid;
+  grid-template-areas: ". button . title  title title ."
+  "canvas canvas canvas canvas canvas canvas canvas";
+  justify-items:center;
+  align-items:center;
+}
+
+h1{
+  grid-area:title;
+}
+
 .canvas{
   width:50vw;
   height:30vw;
   background:#ccc;
+  grid-area:canvas;
+}
+
+#resetButton{
+  height:30px;
+  grid-area:button;
 }

@@ -13,6 +13,9 @@ import './MyCanvas.css';
 //
 // export default myCanvas;
 
+// [touchscreen hint from ](https://codepen.io/leenalavanya/pen/zvGmZZ)
+// [touch event hints](https://www.w3schools.com/jsref/obj_touchevent.asp)
+
 // [using canvas with react](https://blog.lavrton.com/using-react-with-html5-canvas-871d07d8d753)
 class myCanvas extends React.Component {
   // this is a function component - it takes properties it doesn't have its own state
@@ -20,10 +23,14 @@ class myCanvas extends React.Component {
       canvas : "",
       context : "",
       image : new Image(),
+      lastX:undefined,
+      lastY:undefined,
+      lock_ratio:true,
       imageData:undefined,
       mousedown:{},
       rubberbandRectangle:{},
-      dragging:false
+      dragging:false,
+      press:false
     }; // state
 
     componentDidMount = () => {
@@ -31,11 +38,18 @@ class myCanvas extends React.Component {
       console.log("myCanvas mounted");
       let canvas = document.getElementById('canvas'),
       context = canvas.getContext('2d'),
+      canvas_clone = document.createElement('canvas'),
+      clone_context = canvas_clone.getContext('2d'),
       resetButton = document.getElementById('resetButton');
+
+      canvas_clone.width = canvas.width;
+      canvas_clone.height = canvas.height;
 
       this.setState({
         canvas,
         context,
+        canvas_clone,
+        clone_context,
         resetButton
       });//setState
 
@@ -44,47 +58,141 @@ class myCanvas extends React.Component {
     componentDidUpdate = () => {
       //this section is for executing just after first state update - all init vars are set by now
         let s = this.state,
-        ctx = s.context;
+        ctx = s.context,
+        cctx = s.clone_context;
 
         ctx.strokeStyle = 'navy';
         ctx.lineWidth = 1.0;
 
         // s.image.src = 'https://i.ytimg.com/vi/hjVN4KQY_Ko/maxresdefault.jpg';
-        s.image.src = './images/crew2.jpg';
+        s.image.src = './images/crew.jpg';
         s.image.onload = (e) => {
           s.context.drawImage(s.image, 0, 0, s.canvas.width, s.canvas.height);
+          s.clone_context.drawImage(s.image, 0, 0, s.canvas.width, s.canvas.height);
+          // this.set_grid();
         }// onload
 
         s.resetButton.onclick = (e) => {
           console.log('resetting btn');
           ctx.clearRect(0, 0, s.canvas.width, s.canvas.height);
           ctx.drawImage(s.image, 0, 0, s.canvas.width, s.canvas.height);
+
+          // reset the clone too
+          cctx.clearRect(0, 0, s.canvas.width, s.canvas.height);
+          cctx.drawImage(s.image, 0, 0, s.canvas.width, s.canvas.height);
         }// resetButton
 
         s.canvas.onmousedown = (e) => {
-          console.log("mousedown action");
-          let loc = this.windowToCanvas(s.canvas, e.clientX, e.clientY);
-          e.preventDefault();
-          this.rubberbandStart(loc.x, loc.y);
+          this.start_data(e)
+        }// md
+        s.canvas.ontouchstart = (e) => {
+          this.start_data(e)
         }// md
 
         s.canvas.onmousemove = (e) => {
-          console.log("mousemove action");
-          let loc;
-
-          if(s.dragging){
-            console.log("dragging action");
-            loc = this.windowToCanvas(s.canvas, e.clientX, e.clientY);
-            this.rubberbandStretch(loc.x, loc.y);
-          }// if
+          this.move_data(e);
+        }// mm
+        s.canvas.ontouchmove = (e) => {
+          this.move_data(e);
         }// mm
 
         s.canvas.onmouseup = (e) => {
-          console.log("mouseup action");
-          this.rubberbandEnd();
+          this.end_data(e);
+        }// mu
+        s.canvas.ontouchend = (e) => {
+          this.end_data(e);
+        }// mu
+        s.canvas.ontouchcancel = (e) => {
+          this.end_data(e);
         }// mu
 
     }; // componentDidUpdate
+
+    getX = function (e) {
+      return (e.pageX == undefined) ? e.targetTouches[0].pageX : e.pageX;
+    }// getX
+
+    getY = function (e) {
+      return (e.pageY == undefined) ? e.targetTouches[0].pageY : e.pageY;
+    }// getX
+
+    start_data = function (e) {
+      console.log("mousedown action");
+      let _ = this,
+      s = _.state,
+      loc = this.windowToCanvas(s.canvas, _.getX(e), _.getY(e));
+
+      e.preventDefault();
+      this.rubberbandStart(loc.x, loc.y);
+    }// start_data
+
+    move_data = function (e) {
+      console.log("mousemove action");
+      let _ = this,
+      s = _.state,
+      loc;
+
+      if(s.press){
+        s.dragging = true;
+      }
+
+      if(s.dragging){
+        console.log("dragging action");
+        loc = this.windowToCanvas(s.canvas, _.getX(e), _.getY(e));
+        this.rubberbandStretch(loc.x, loc.y);
+      }// if
+      this.track_mouse_data(e)
+    }// move_data
+
+    end_data = function (e) {
+      let _ = this,
+      s = _.state;
+      console.log("mouseup action");
+      _.rubberbandEnd();
+      s.press = false;
+    }// end_data
+
+    track_mouse_data = function (e) {
+      let s = this.state;
+
+      let loc = this.windowToCanvas(s.canvas, e.clientX, e.clientY);
+      let cssW = (s.imageData != undefined) ? s.imageData.width / s.canvas.width : undefined;
+      let cssH = (s.imageData != undefined) ? s.imageData.height / s.canvas.height : undefined;
+      let touchX = (e.pageX == undefined) ? e.targetTouches[0].pageX : undefined;
+      let touchY = (e.pageY == undefined) ? e.targetTouches[0].pageY : undefined;
+      console.log(`screen-x: ${e.clientX},
+        screen-y: ${e.clientY},
+        canvas-x: ${loc.x},
+        canvas-y: ${loc.y},
+        rb-l: ${s.rubberbandRectangle.left},
+        rb-t: ${s.rubberbandRectangle.top},
+        rb-w: ${s.rubberbandRectangle.width},
+        rb-h: ${s.rubberbandRectangle.height},
+        md-x:${s.mousedown.x},
+        md-y:${s.mousedown.y},
+        ocss-w:${cssW},
+        ocss-h:${cssH},
+        off-l:${e.pageX - s.canvas.offsetLeft},
+        off-t:${e.pageY - s.canvas.offsetTop},
+        lastX:${s.lastX},
+        lastY:${s.lastY},
+        touchX:${touchX},
+        touchY:${touchY}
+        `);
+    }
+
+    set_grid = function () {
+      let s = this.state,
+      ctx = s.context;
+      let counter = 10;
+      while(counter < s.canvas.width)
+      {
+        ctx.moveTo(counter, 0);
+        ctx.lineTo(counter,s.canvas.height);
+        ctx.stroke();
+        counter = counter + 10;
+      }
+    }
 
     windowToCanvas = function (canvas, x, y) {
       let s = this.state;
@@ -94,52 +202,13 @@ class myCanvas extends React.Component {
         x: x - canvasRectangle.left,
         y: y - canvasRectangle.top
       }//return
+
+      // return {
+      //   x: x - s.canvas.offsetLeft,
+      //   y: y - s.canvas.offsetTop
+      // }//return
+
     }// windowToCanvas
-
-    captureRubberbandPixels = function () {
-      let s = this.state,
-      ctx = s.context;
-
-      s.imageData = s.context.getImageData(
-        s.rubberbandRectangle.left,
-        s.rubberbandRectangle.top,
-        s.rubberbandRectangle.width,
-        s.rubberbandRectangle.height
-      );
-    }// captureRubberbandPixels
-
-    restoreRubberbandPixels = function functionName() {
-      let s = this.state,
-      ctx = s.context;
-
-      ctx.putImageData(s.imageData, s.rubberbandRectangle.left,
-      s.rubberbandRectangle.top);
-    }// restoreRubberbandPixels
-
-    drawRubberband = function () {
-      let s = this.state,
-      ctx = s.context;
-
-      ctx.strokeRect(s.rubberbandRectangle.left + ctx.lineWidth,
-      s.rubberbandRectangle.top + ctx.lineWidth,
-      s.rubberbandRectangle.width - 2 * ctx.lineWidth,
-      s.rubberbandRectangle.height - 2 * ctx.lineWidth);
-    }// drawRubberband
-
-    setRubberbandRectangle = function (x, y) {
-      let s = this.state,
-      ctx = s.context;
-
-      s.rubberbandRectangle.left = Math.min(x, s.mousedown.x);
-      s.rubberbandRectangle.top = Math.min(y, s.mousedown.y);
-      s.rubberbandRectangle.width = Math.abs(x - s.mousedown.x);
-      s.rubberbandRectangle.height = Math.abs(y - s.mousedown.y);
-    }// setRubberbandRectangle
-
-    updateRubberband = function () {
-      this.captureRubberbandPixels();
-      this.drawRubberband();
-    }// updateRubberband
 
     rubberbandStart = function (x, y) {
       let s = this.state,
@@ -147,11 +216,15 @@ class myCanvas extends React.Component {
 
       s.mousedown.x = x;
       s.mousedown.y = y;
+      s.lastX = x;
+      s.lastY = y;
 
-      s.rubberbandRectangle.left = s.mousedown.x;
-      s.rubberbandRectangle.top = s.mousedown.y;
+      s.rubberbandRectangle.left = x;
+      s.rubberbandRectangle.top = y;
 
-      s.dragging = true;
+      // im using press to help eliminate the break caused by dev breakpoints
+      // it still blunders but its not permanently broken
+      s.press = true;
     }// rubberbandStart
 
     rubberbandStretch = function (x, y) {
@@ -165,31 +238,187 @@ class myCanvas extends React.Component {
           this.restoreRubberbandPixels();
         }//if`
       }// if
-    }// rubberbandStretch
 
-    setRubberbandRectangle = function () {
-      let s = this.state,
-      ctx = s.context;
+      this.setRubberbandRectangle(x, y);
 
-      console.log("setting rubberband");
       if(s.rubberbandRectangle.width > 2 * ctx.lineWidth &&
         s.rubberbandRectangle.height > 2 * ctx.lineWidth)
       {
         console.log("updating rubberband");
         this.updateRubberband();
       }// if
-    }// setRubberbandRectangle
+    }// rubberbandStretch
 
-    rubberbandEnd = function () {
+    // deprecated fn works with captureRubberbandPixels
+    restoreRubberbandPixels = function functionName() {
       let s = this.state,
       ctx = s.context;
 
-      ctx.drawImage(s.canvas,
-      s.rubberbandRectangle.left + ctx.lineWidth * 2,
-      s.rubberbandRectangle.top + ctx.lineWidth * 2,
-      s.rubberbandRectangle.width - 4 * ctx.lineWidth,
-      s.rubberbandRectangle.height - 4 * ctx.lineWidth,
-      0, 0, s.canvas.width, s.canvas.height);
+      // this doesn't seem to be working - so im using clearRect instead
+      ctx.putImageData(s.imageData, s.rubberbandRectangle.left,
+        s.rubberbandRectangle.top);
+
+        console.log(`s.imageData = ${s.imageData}`);
+    }// restoreRubberbandPixels
+
+    restoreRubberbandPixels2 = function functionName() {
+      let s = this.state,
+      ctx = s.context;
+
+      let deviceWidthOverCSSPixels = s.imageData.width / s.canvas.width,
+      deviceHeightOverCSSPixels = s.imageData.height / s.canvas.height;
+
+      ctx.putImageData(s.imageData, 0, 0,
+        s.rubberbandRectangle.left,
+        s.rubberbandRectangle.top,
+        s.rubberbandRectangle.width,
+        s.rubberbandRectangle.height);
+
+        console.log(`s.imageData = ${s.imageData}`);
+    }// restoreRubberbandPixels2
+
+    setRubberbandRectangle = function (x, y) {
+      let s = this.state,
+      ctx = s.context;
+
+      s.rubberbandRectangle.top = Math.min(y, s.mousedown.y);
+      // s.rubberbandRectangle.top = (y > s.mousedown.y) ? Math.min(y, s.mousedown.y) : ;
+      s.rubberbandRectangle.left = Math.min(x, s.mousedown.x);
+
+      if(s.lock_ratio){
+
+        let x_quad = (x > s.mousedown.x) ? "b" : "a",
+        y_quad = (y > s.mousedown.y) ? "b" : "a",
+        quadrant = x_quad + y_quad;
+
+        switch (quadrant) {
+          case "aa":
+            if(s.lastX != x){
+              s.rubberbandRectangle.width = Math.abs(x - s.mousedown.x);
+              s.rubberbandRectangle.height = (s.rubberbandRectangle.width / s.canvas.width ) * s.canvas.height;
+              s.rubberbandRectangle.top =  s.mousedown.y - s.rubberbandRectangle.height;// modification
+              s.lastX = x;
+            }else{
+              s.rubberbandRectangle.height = Math.abs(y - s.mousedown.y);
+              s.rubberbandRectangle.width = (s.rubberbandRectangle.height / s.canvas.height ) * s.canvas.width;
+              s.rubberbandRectangle.left = s.mousedown.x - s.rubberbandRectangle.width;// modification
+              s.lastY = y;
+            }// if
+          break;
+          case "ba":
+            // bottom right
+            s.rubberbandRectangle.left = Math.min(x, s.mousedown.x);
+            if(s.lastX != x){
+              s.rubberbandRectangle.width = Math.abs(x - s.mousedown.x);
+              s.rubberbandRectangle.height = (s.rubberbandRectangle.width / s.canvas.width ) * s.canvas.height;
+              s.rubberbandRectangle.top =  s.mousedown.y - s.rubberbandRectangle.height;// modification
+              s.lastX = x;
+            }else{
+              s.rubberbandRectangle.height = Math.abs(y - s.mousedown.y);
+              s.rubberbandRectangle.width = (s.rubberbandRectangle.height / s.canvas.height ) * s.canvas.width;
+              s.lastY = y;
+            }
+          break;
+          case "bb":
+            // bottom right
+            s.rubberbandRectangle.top = Math.min(y, s.mousedown.y);
+            s.rubberbandRectangle.left = Math.min(x, s.mousedown.x);
+            if(s.lastX != x){
+              s.rubberbandRectangle.width = Math.abs(x - s.mousedown.x);
+              s.rubberbandRectangle.height = (s.rubberbandRectangle.width / s.canvas.width ) * s.canvas.height;
+              s.lastX = x;
+            }else{
+              s.rubberbandRectangle.height = Math.abs(y - s.mousedown.y);
+              s.rubberbandRectangle.width = (s.rubberbandRectangle.height / s.canvas.height ) * s.canvas.width;
+              s.lastY = y;
+            }
+          break;
+          case "ab":
+            // bottom left
+            s.rubberbandRectangle.top = Math.min(y, s.mousedown.y);
+            if(s.lastX != x){
+              s.rubberbandRectangle.left = Math.min(x, s.mousedown.x);
+              s.rubberbandRectangle.width = Math.abs(x - s.mousedown.x);
+              s.rubberbandRectangle.height = (s.rubberbandRectangle.width / s.canvas.width ) * s.canvas.height;
+              s.lastX = x;
+            }else{
+              s.rubberbandRectangle.height = Math.abs(y - s.mousedown.y);
+              s.rubberbandRectangle.width = (s.rubberbandRectangle.height / s.canvas.height ) * s.canvas.width;
+              s.rubberbandRectangle.left = s.mousedown.x - s.rubberbandRectangle.width;// modification
+              s.lastY = y;
+            }// if
+
+          break;
+        }// switch
+
+
+      }else{
+        // original and less complex version
+        s.rubberbandRectangle.left = Math.min(x, s.mousedown.x);
+        s.rubberbandRectangle.top = Math.min(y, s.mousedown.y);
+        s.rubberbandRectangle.width = Math.abs(x - s.mousedown.x);
+        s.rubberbandRectangle.height = Math.abs(y - s.mousedown.y);
+      }
+
+      console.log(`l ${s.rubberbandRectangle.left},
+        t  ${s.rubberbandRectangle.left},
+        w  ${s.rubberbandRectangle.width},
+        h  ${s.rubberbandRectangle.height}`);
+    }// setRubberbandRectangle
+
+    updateRubberband = function () {
+      this.captureRubberbandPixels();
+      this.drawRubberband();
+    }// updateRubberband
+
+    // deprecated fn - works with restoreRubberbandPixels
+    captureRubberbandPixels = function () {
+      let s = this.state,
+      ctx = s.context;
+
+      s.imageData = s.context.getImageData(
+        s.rubberbandRectangle.left,
+        s.rubberbandRectangle.top,
+        s.rubberbandRectangle.width,
+        s.rubberbandRectangle.height
+      );
+      console.log(`s.imageData = ${s.imageData}`);
+    }// captureRubberbandPixels
+
+    drawRubberband = function () {
+      let s = this.state,
+      ctx = s.context;
+
+      // useful for clearing the canvas to redraw - removing rubber band, but drawImage does it in one step
+      // ctx.clearRect(0, 0, s.canvas.width, s.canvas.height);
+      s.context.drawImage(s.canvas_clone, 0, 0, s.canvas.width, s.canvas.height);
+
+      ctx.strokeRect(s.rubberbandRectangle.left + ctx.lineWidth,
+        s.rubberbandRectangle.top + ctx.lineWidth,
+        s.rubberbandRectangle.width - 2 * ctx.lineWidth,
+        s.rubberbandRectangle.height - 2 * ctx.lineWidth);
+
+        // this.set_grid();
+
+    }// drawRubberband
+
+    rubberbandEnd = function () {
+      let s = this.state,
+      ctx = s.context,
+      cctx = s.clone_context;
+
+      if (s.press && s.dragging) {
+
+        ctx.drawImage(s.canvas,
+          s.rubberbandRectangle.left + ctx.lineWidth * 2,
+          s.rubberbandRectangle.top + ctx.lineWidth * 2,
+          s.rubberbandRectangle.width - 4 * ctx.lineWidth,
+          s.rubberbandRectangle.height - 4 * ctx.lineWidth,
+          0, 0, s.canvas.width, s.canvas.height);
+
+          // prep the clone
+          cctx.drawImage(s.canvas, 0, 0, s.canvas.width, s.canvas.height);
+      }
 
       s.dragging = false;
       s.imageData = undefined;
